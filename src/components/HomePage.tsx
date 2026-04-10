@@ -523,12 +523,35 @@ export default function HomePage() {
             
             {/* Empty State */}
             {!analysis && !comparison && !isAnalyzing && (
-              <div className="flex flex-col items-center justify-center text-neutral-400 p-8 text-center no-print min-h-[400px]">
-                <FileText className="w-16 h-16 mb-4 opacity-20" />
-                <p className="text-lg font-medium text-neutral-600 mb-2">Sonuçlar Burada Görünecek</p>
-                <p className="text-sm max-w-sm">
-                  İşlemi başlattığınızda, yapay zeka analizleri bu alanda gösterilecektir.
+              <div className="flex flex-col items-center justify-center p-8 text-center no-print min-h-[400px]">
+                <div className="bg-blue-50 p-4 rounded-full mb-6">
+                  <Scale className="w-12 h-12 text-blue-600" />
+                </div>
+                <h3 className="text-2xl font-bold text-neutral-900 mb-2">Nasıl Çalışır?</h3>
+                <p className="text-neutral-500 mb-8 max-w-md">
+                  Sözleşmelerinizi saniyeler içinde analiz edin, gizli riskleri bulun ve ne anlama geldiklerini öğrenin.
                 </p>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full max-w-2xl text-left">
+                  <div className="bg-white p-5 rounded-xl border border-neutral-200 shadow-sm relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-16 h-16 bg-blue-50 rounded-bl-full -z-10"></div>
+                    <div className="w-8 h-8 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold mb-3">1</div>
+                    <h4 className="font-semibold text-neutral-900 mb-2">Yükleyin</h4>
+                    <p className="text-sm text-neutral-600">Sözleşme metnini yapıştırın veya PDF/Resim formatında yükleyin.</p>
+                  </div>
+                  <div className="bg-white p-5 rounded-xl border border-neutral-200 shadow-sm relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-16 h-16 bg-indigo-50 rounded-bl-full -z-10"></div>
+                    <div className="w-8 h-8 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center font-bold mb-3">2</div>
+                    <h4 className="font-semibold text-neutral-900 mb-2">Analiz Edin</h4>
+                    <p className="text-sm text-neutral-600">Yapay zeka metni okur, riskleri ve önemli tarihleri çıkarır.</p>
+                  </div>
+                  <div className="bg-white p-5 rounded-xl border border-neutral-200 shadow-sm relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-16 h-16 bg-green-50 rounded-bl-full -z-10"></div>
+                    <div className="w-8 h-8 bg-green-100 text-green-700 rounded-full flex items-center justify-center font-bold mb-3">3</div>
+                    <h4 className="font-semibold text-neutral-900 mb-2">Karar Verin</h4>
+                    <p className="text-sm text-neutral-600">Özet raporu inceleyin, müzakere taslaklarını kullanın veya sohbet edin.</p>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -664,61 +687,181 @@ export default function HomePage() {
                     {analysis.risk_flags.length === 0 ? (
                       <p className="text-neutral-500 italic">Önemli bir risk tespit edilmedi.</p>
                     ) : (
-                      <div className="w-full space-y-4">
-                        {analysis.risk_flags.map((flag, idx) => (
-                          <div key={idx} className="border border-neutral-200 rounded-lg overflow-hidden print-break-inside-avoid">
-                            <div className="bg-neutral-50 p-4 border-b border-neutral-200 flex items-center gap-3">
-                              <Badge 
-                                variant={getRiskBadgeVariant(flag.risk_level)}
-                                className={flag.risk_level === "medium" ? "bg-orange-100 text-orange-800 hover:bg-orange-100 border-orange-200" : ""}
-                              >
-                                {flag.risk_level.toUpperCase()}
-                              </Badge>
-                              <span className="font-medium">{flag.clause_type.replace("_", " ").toUpperCase()}</span>
-                            </div>
-                            <div className="p-4 space-y-4">
-                              <div className="bg-neutral-50 p-4 rounded-md border border-neutral-100 font-mono text-sm text-neutral-600">
-                                "{flag.clause_text}"
+                      <Accordion type="single" collapsible className="w-full space-y-4">
+                        {/* High Risk */}
+                        {analysis.risk_flags.filter(f => f.risk_level === 'high').length > 0 && (
+                          <AccordionItem value="high-risks" className="border border-red-200 rounded-lg overflow-hidden bg-white">
+                            <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-red-50/50 transition-colors">
+                              <div className="flex items-center gap-3">
+                                <Badge variant="destructive" className="bg-red-500">YÜKSEK RİSK</Badge>
+                                <span className="font-semibold text-red-900">
+                                  {analysis.risk_flags.filter(f => f.risk_level === 'high').length} Madde Bulundu
+                                </span>
                               </div>
-                              
-                              <div>
-                                <h4 className="font-semibold text-neutral-900 mb-1">Ne Anlama Geliyor?</h4>
-                                <p className="leading-relaxed text-neutral-700">
-                                  {renderTextWithTooltips(flag.plain_explanation, analysis.complex_terms)}
-                                </p>
-                              </div>
-                              
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="bg-blue-50 p-4 rounded-md border border-blue-100">
-                                  <h4 className="font-semibold text-blue-900 mb-1 flex items-center gap-2 text-sm">
-                                    <ShieldQuestion className="w-4 h-4" />
-                                    Karşı Tarafa Sorun:
-                                  </h4>
-                                  <p className="text-blue-800 italic text-sm">"{flag.suggested_question}"</p>
-                                </div>
-
-                                {flag.negotiation_draft && (
-                                  <div className="bg-indigo-50 p-4 rounded-md border border-indigo-100 relative group">
-                                    <h4 className="font-semibold text-indigo-900 mb-1 flex items-center gap-2 text-sm">
-                                      <MessageSquare className="w-4 h-4" />
-                                      Müzakere Taslağı:
-                                    </h4>
-                                    <p className="text-indigo-800 text-sm">"{flag.negotiation_draft}"</p>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="icon" 
-                                      className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity no-print"
-                                      onClick={() => copyToClipboard(flag.negotiation_draft)}
-                                    >
-                                      <Copy className="w-3 h-3" />
-                                    </Button>
+                            </AccordionTrigger>
+                            <AccordionContent className="px-4 pb-4 pt-2 space-y-6">
+                              {analysis.risk_flags.filter(f => f.risk_level === 'high').map((flag, idx) => (
+                                <div key={idx} className="space-y-4 pb-6 border-b border-neutral-100 last:border-0 last:pb-0">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className="font-semibold text-neutral-800">{flag.clause_type.replace("_", " ").toUpperCase()}</span>
                                   </div>
-                                )}
+                                  <div className="bg-neutral-50 p-4 rounded-md border border-neutral-100 font-mono text-sm text-neutral-600">
+                                    "{flag.clause_text}"
+                                  </div>
+                                  <div>
+                                    <h4 className="font-semibold text-neutral-900 mb-1">Ne Anlama Geliyor?</h4>
+                                    <p className="leading-relaxed text-neutral-700">
+                                      {renderTextWithTooltips(flag.plain_explanation, analysis.complex_terms)}
+                                    </p>
+                                  </div>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="bg-blue-50 p-4 rounded-md border border-blue-100">
+                                      <h4 className="font-semibold text-blue-900 mb-1 flex items-center gap-2 text-sm">
+                                        <ShieldQuestion className="w-4 h-4" />
+                                        Karşı Tarafa Sorun:
+                                      </h4>
+                                      <p className="text-blue-800 italic text-sm">"{flag.suggested_question}"</p>
+                                    </div>
+                                    {flag.negotiation_draft && (
+                                      <div className="bg-indigo-50 p-4 rounded-md border border-indigo-100 relative group">
+                                        <h4 className="font-semibold text-indigo-900 mb-1 flex items-center gap-2 text-sm">
+                                          <MessageSquare className="w-4 h-4" />
+                                          Müzakere Taslağı:
+                                        </h4>
+                                        <p className="text-indigo-800 text-sm">"{flag.negotiation_draft}"</p>
+                                        <Button 
+                                          variant="ghost" 
+                                          size="icon" 
+                                          className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity no-print"
+                                          onClick={() => copyToClipboard(flag.negotiation_draft)}
+                                        >
+                                          <Copy className="w-3 h-3" />
+                                        </Button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </AccordionContent>
+                          </AccordionItem>
+                        )}
+
+                        {/* Medium Risk */}
+                        {analysis.risk_flags.filter(f => f.risk_level === 'medium').length > 0 && (
+                          <AccordionItem value="medium-risks" className="border border-orange-200 rounded-lg overflow-hidden bg-white">
+                            <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-orange-50/50 transition-colors">
+                              <div className="flex items-center gap-3">
+                                <Badge variant="default" className="bg-orange-500 hover:bg-orange-600">ORTA RİSK</Badge>
+                                <span className="font-semibold text-orange-900">
+                                  {analysis.risk_flags.filter(f => f.risk_level === 'medium').length} Madde Bulundu
+                                </span>
                               </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="px-4 pb-4 pt-2 space-y-6">
+                              {analysis.risk_flags.filter(f => f.risk_level === 'medium').map((flag, idx) => (
+                                <div key={idx} className="space-y-4 pb-6 border-b border-neutral-100 last:border-0 last:pb-0">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className="font-semibold text-neutral-800">{flag.clause_type.replace("_", " ").toUpperCase()}</span>
+                                  </div>
+                                  <div className="bg-neutral-50 p-4 rounded-md border border-neutral-100 font-mono text-sm text-neutral-600">
+                                    "{flag.clause_text}"
+                                  </div>
+                                  <div>
+                                    <h4 className="font-semibold text-neutral-900 mb-1">Ne Anlama Geliyor?</h4>
+                                    <p className="leading-relaxed text-neutral-700">
+                                      {renderTextWithTooltips(flag.plain_explanation, analysis.complex_terms)}
+                                    </p>
+                                  </div>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="bg-blue-50 p-4 rounded-md border border-blue-100">
+                                      <h4 className="font-semibold text-blue-900 mb-1 flex items-center gap-2 text-sm">
+                                        <ShieldQuestion className="w-4 h-4" />
+                                        Karşı Tarafa Sorun:
+                                      </h4>
+                                      <p className="text-blue-800 italic text-sm">"{flag.suggested_question}"</p>
+                                    </div>
+                                    {flag.negotiation_draft && (
+                                      <div className="bg-indigo-50 p-4 rounded-md border border-indigo-100 relative group">
+                                        <h4 className="font-semibold text-indigo-900 mb-1 flex items-center gap-2 text-sm">
+                                          <MessageSquare className="w-4 h-4" />
+                                          Müzakere Taslağı:
+                                        </h4>
+                                        <p className="text-indigo-800 text-sm">"{flag.negotiation_draft}"</p>
+                                        <Button 
+                                          variant="ghost" 
+                                          size="icon" 
+                                          className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity no-print"
+                                          onClick={() => copyToClipboard(flag.negotiation_draft)}
+                                        >
+                                          <Copy className="w-3 h-3" />
+                                        </Button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </AccordionContent>
+                          </AccordionItem>
+                        )}
+
+                        {/* Low Risk */}
+                        {analysis.risk_flags.filter(f => f.risk_level === 'low').length > 0 && (
+                          <AccordionItem value="low-risks" className="border border-neutral-200 rounded-lg overflow-hidden bg-white">
+                            <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-neutral-50/50 transition-colors">
+                              <div className="flex items-center gap-3">
+                                <Badge variant="secondary">DÜŞÜK RİSK</Badge>
+                                <span className="font-semibold text-neutral-700">
+                                  {analysis.risk_flags.filter(f => f.risk_level === 'low').length} Madde Bulundu
+                                </span>
+                              </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="px-4 pb-4 pt-2 space-y-6">
+                              {analysis.risk_flags.filter(f => f.risk_level === 'low').map((flag, idx) => (
+                                <div key={idx} className="space-y-4 pb-6 border-b border-neutral-100 last:border-0 last:pb-0">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className="font-semibold text-neutral-800">{flag.clause_type.replace("_", " ").toUpperCase()}</span>
+                                  </div>
+                                  <div className="bg-neutral-50 p-4 rounded-md border border-neutral-100 font-mono text-sm text-neutral-600">
+                                    "{flag.clause_text}"
+                                  </div>
+                                  <div>
+                                    <h4 className="font-semibold text-neutral-900 mb-1">Ne Anlama Geliyor?</h4>
+                                    <p className="leading-relaxed text-neutral-700">
+                                      {renderTextWithTooltips(flag.plain_explanation, analysis.complex_terms)}
+                                    </p>
+                                  </div>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="bg-blue-50 p-4 rounded-md border border-blue-100">
+                                      <h4 className="font-semibold text-blue-900 mb-1 flex items-center gap-2 text-sm">
+                                        <ShieldQuestion className="w-4 h-4" />
+                                        Karşı Tarafa Sorun:
+                                      </h4>
+                                      <p className="text-blue-800 italic text-sm">"{flag.suggested_question}"</p>
+                                    </div>
+                                    {flag.negotiation_draft && (
+                                      <div className="bg-indigo-50 p-4 rounded-md border border-indigo-100 relative group">
+                                        <h4 className="font-semibold text-indigo-900 mb-1 flex items-center gap-2 text-sm">
+                                          <MessageSquare className="w-4 h-4" />
+                                          Müzakere Taslağı:
+                                        </h4>
+                                        <p className="text-indigo-800 text-sm">"{flag.negotiation_draft}"</p>
+                                        <Button 
+                                          variant="ghost" 
+                                          size="icon" 
+                                          className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity no-print"
+                                          onClick={() => copyToClipboard(flag.negotiation_draft)}
+                                        >
+                                          <Copy className="w-3 h-3" />
+                                        </Button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </AccordionContent>
+                          </AccordionItem>
+                        )}
+                      </Accordion>
                     )}
                   </div>
 

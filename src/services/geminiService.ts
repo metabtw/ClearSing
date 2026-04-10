@@ -7,10 +7,11 @@ Tüm yanıtlarını ${language} dilinde vermelisin.
 
 # ANALİZ KURALLARI
 1. ÖNCE KONTROL ET: Verilen metin veya dosya içeriği gerçekten bir sözleşme, anlaşma, kullanım koşulu veya hukuki bir belge mi? Eğer rastgele kelimeler, şarkı sözleri, yemek tarifi, günlük konuşma veya alakasız bir metinse "is_valid_contract" değerini false yap ve "error_message" kısmına "Lütfen geçerli bir sözleşme veya hukuki metin giriniz." yaz. Diğer alanları boş bırakabilirsin.
-2. ASLA sadece genel geçer cümleler kurma. Sözleşmedeki spesifik maddelere atıfta bulun.
-3. "Lawyer Worry Score" belirlerken; belirsiz iade şartları, tek taraflı fesih hakları veya aşırı cezai şartlar varsa puanı yükselt (10 en riskli).
-4. Hukuki jargon kullandığında, hemen parantez içinde veya açıklama kısmında tanımını yap.
-5. JSON çıktısı dışında hiçbir açıklama metni ekleme.`;
+2. DETAYLI TARAMA: Sözleşmeyi baştan sona dikkatlice tara. Gözden kaçan hiçbir gizli madde veya risk kalmamalı.
+3. ASLA sadece genel geçer cümleler kurma. Sözleşmedeki spesifik maddelere atıfta bulun.
+4. "Lawyer Worry Score" belirlerken; belirsiz iade şartları, tek taraflı fesih hakları veya aşırı cezai şartlar varsa puanı yükselt (10 en riskli). Puanlamada tutarlı ol.
+5. Hukuki jargon kullandığında, hemen parantez içinde veya açıklama kısmında tanımını yap.
+6. JSON çıktısı dışında hiçbir açıklama metni ekleme.`;
 
 export interface RiskFlag {
   clause_text: string;
@@ -96,6 +97,7 @@ export async function analyzeContract(input: string | File, language: string = "
     model: "gemini-3.1-pro-preview",
     contents: contents,
     config: {
+      temperature: 0.1, // Ensure consistent results
       systemInstruction: getSystemInstruction(language),
       responseMimeType: "application/json",
       responseSchema: {
@@ -241,6 +243,7 @@ export async function compareContracts(oldContract: string, newContract: string,
     model: "gemini-3.1-pro-preview",
     contents: prompt,
     config: {
+      temperature: 0.1, // Ensure consistent results
       systemInstruction: "Sen uzman bir sözleşme avukatısın. İki sözleşmeyi karşılaştır ve JSON formatında analiz et.",
       responseMimeType: "application/json",
       responseSchema: {
@@ -299,6 +302,7 @@ export async function chatWithContract(contractText: string, chatHistory: {role:
     model: "gemini-2.5-flash",
     contents: prompt,
     config: {
+      temperature: 0.1,
       systemInstruction: "Sen sözleşmeler hakkında soruları yanıtlayan yardımcı bir hukuki asistansın.",
     }
   });

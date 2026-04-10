@@ -70,13 +70,14 @@ service cloud.firestore {
     }
 
     function isValidAnalysis(data) {
-      return hasOnlyAllowedFields(['userId', 'title', 'summary', 'risks', 'obligations', 'keyDates', 'createdAt']) &&
+      return hasOnlyAllowedFields(['userId', 'title', 'summary', 'risks', 'obligations', 'keyDates', 'createdAt', 'fullResult']) &&
              data.userId is string && data.userId.size() > 0 && data.userId.size() < 100 &&
              data.title is string && data.title.size() > 0 && data.title.size() < 500 &&
              data.summary is string && data.summary.size() > 0 && data.summary.size() < 50000 &&
              (!('risks' in data) || (data.risks is list && data.risks.size() < 100)) &&
              (!('obligations' in data) || (data.obligations is list && data.obligations.size() < 100)) &&
              (!('keyDates' in data) || (data.keyDates is list && data.keyDates.size() < 100)) &&
+             (!('fullResult' in data) || data.fullResult is map) &&
              data.createdAt is string && isValidDateString(data.createdAt);
     }
 

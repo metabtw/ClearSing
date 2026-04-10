@@ -73,6 +73,10 @@
           "type": "string",
           "format": "date-time",
           "description": "When the analysis was saved"
+        },
+        "fullResult": {
+          "type": "object",
+          "description": "The complete analysis result from the AI"
         }
       },
       "required": ["userId", "title", "summary", "createdAt"]
