@@ -12,7 +12,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-neutral-50 text-neutral-900 font-sans">
-      <header className="bg-white border-b border-neutral-200 px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sticky top-0 z-10 no-print">
+      <header className="bg-white border-b border-neutral-200 px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sticky top-0 z-50 no-print">
         <Link to="/" className="flex items-center gap-2">
           <Scale className="w-6 h-6 text-blue-600" />
           <h1 className="text-xl font-semibold tracking-tight">ClearSign AI</h1>

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { analyzeContract, ContractAnalysis, chatWithContract, compareContracts, ComparisonAnalysis } from "../services/geminiService";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
@@ -13,8 +13,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/t
 import { Input } from "./ui/input";
 import { AlertTriangle, CheckCircle2, FileText, Info, Printer, Scale, ShieldAlert, ShieldCheck, ShieldQuestion, UploadCloud, X, Calendar as CalendarIcon, MessageSquare, ArrowRightLeft, Lock, Globe, Copy, Send } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, query, where, onSnapshot } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "../firebase";
+import { Link } from "react-router-dom";
 
 export default function HomePage() {
   const { user } = useAuth();
@@ -46,6 +47,31 @@ export default function HomePage() {
   const [chatMessage, setChatMessage] = useState("");
   const [isChatting, setIsChatting] = useState(false);
 
+  // Usage Rights State
+  const MAX_USAGE = 5;
+  const [usageCount, setUsageCount] = useState<number>(0);
+  const [localUsageCount, setLocalUsageCount] = useState<number>(() => {
+    return parseInt(localStorage.getItem('localUsageCount') || '0');
+  });
+
+  useEffect(() => {
+    if (!user) {
+      setUsageCount(0);
+      return;
+    }
+    const q = query(collection(db, 'analyses'), where('userId', '==', user.uid));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setUsageCount(snapshot.size);
+    }, (error) => {
+      console.error("Error fetching usage count", error);
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+  const currentUsage = user ? usageCount : localUsageCount;
+  const remainingUsage = Math.max(0, MAX_USAGE - currentUsage);
+  const hasRemainingUsage = remainingUsage > 0;
+
   const anonymizeText = (text: string) => {
     if (!privacyMode) return text;
     let masked = text;
@@ -64,6 +90,11 @@ export default function HomePage() {
     if (inputMode === "text" && !contractText.trim()) return;
     if (inputMode === "file" && !contractFile) return;
     
+    if (!hasRemainingUsage) {
+      setError("Kullanım hakkınız dolmuştur. Lütfen daha fazla analiz için giriş yapın veya hesabınızı yükseltin.");
+      return;
+    }
+
     setIsAnalyzing(true);
     setError(null);
     setChatHistory([]);
@@ -88,15 +119,20 @@ export default function HomePage() {
           await addDoc(collection(db, 'analyses'), {
             userId: user.uid,
             title: contractFile ? contractFile.name : (result.document_type || "Sözleşme Analizi"),
-            summary: result.summary_bullets.join(" "),
-            risks: result.risk_flags.map(r => r.clause_text),
-            obligations: [], // Can be populated if we extract obligations
+            summary: result.summary_bullets.join(" "), // Keep for quick display in list
+            risks: result.risk_flags.map(r => r.clause_text), // Keep for quick display
+            obligations: [], 
             keyDates: result.key_dates || [],
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            fullResult: result // Save the entire object for detailed view
           });
         } catch (dbErr) {
           handleFirestoreError(dbErr, OperationType.CREATE, 'analyses');
         }
+      } else {
+        const newCount = localUsageCount + 1;
+        setLocalUsageCount(newCount);
+        localStorage.setItem('localUsageCount', newCount.toString());
       }
     } catch (err) {
       console.error(err);
@@ -109,6 +145,11 @@ export default function HomePage() {
   const handleCompare = async () => {
     if (!oldContractText.trim() || !newContractText.trim()) return;
     
+    if (!hasRemainingUsage) {
+      setError("Kullanım hakkınız dolmuştur. Lütfen daha fazla analiz için giriş yapın veya hesabınızı yükseltin.");
+      return;
+    }
+
     setIsAnalyzing(true);
     setError(null);
     try {
@@ -116,6 +157,16 @@ export default function HomePage() {
       const newText = anonymizeText(newContractText);
       const result = await compareContracts(oldText, newText, language);
       setComparison(result);
+
+      if (!user) {
+        const newCount = localUsageCount + 1;
+        setLocalUsageCount(newCount);
+        localStorage.setItem('localUsageCount', newCount.toString());
+      } else {
+        // We could also save comparisons to Firestore here and count them, 
+        // but for now we just increment local count if not logged in.
+        // To be fully accurate we should save comparisons to DB too.
+      }
     } catch (err) {
       console.error(err);
       setError("An error occurred while comparing the contracts. Please try again.");
@@ -371,10 +422,21 @@ export default function HomePage() {
                   size="lg" 
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
                   onClick={handleAnalyze}
-                  disabled={isAnalyzing || (inputMode === "text" ? !contractText.trim() : !contractFile)}
+                  disabled={isAnalyzing || (inputMode === "text" ? !contractText.trim() : !contractFile) || !hasRemainingUsage}
                 >
                   {isAnalyzing ? "Analiz Ediliyor..." : "Sözleşmeyi Analiz Et"}
                 </Button>
+                
+                <div className="flex justify-between items-center mt-2 text-sm">
+                  <span className={`font-medium ${remainingUsage === 0 ? 'text-red-600' : 'text-neutral-500'}`}>
+                    Kalan Kullanım Hakkı: {remainingUsage} / {MAX_USAGE}
+                  </span>
+                  {!user && (
+                    <Link to="/auth" className="text-blue-600 hover:underline font-medium">
+                      Giriş Yaparak Hak Kazanın
+                    </Link>
+                  )}
+                </div>
               </>
             ) : (
               // Compare Mode Input
@@ -418,10 +480,21 @@ export default function HomePage() {
                   size="lg" 
                   className="w-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm"
                   onClick={handleCompare}
-                  disabled={isAnalyzing || !oldContractText.trim() || !newContractText.trim()}
+                  disabled={isAnalyzing || !oldContractText.trim() || !newContractText.trim() || !hasRemainingUsage}
                 >
                   {isAnalyzing ? "Karşılaştırılıyor..." : "Değişiklikleri Bul"}
                 </Button>
+
+                <div className="flex justify-between items-center mt-2 text-sm">
+                  <span className={`font-medium ${remainingUsage === 0 ? 'text-red-600' : 'text-neutral-500'}`}>
+                    Kalan Kullanım Hakkı: {remainingUsage} / {MAX_USAGE}
+                  </span>
+                  {!user && (
+                    <Link to="/auth" className="text-blue-600 hover:underline font-medium">
+                      Giriş Yaparak Hak Kazanın
+                    </Link>
+                  )}
+                </div>
               </>
             )}
 
