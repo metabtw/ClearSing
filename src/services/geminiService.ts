@@ -278,7 +278,7 @@ export async function chatWithContract(contractText: string, chatHistory: {role:
   `;
 
   const response = await ai.models.generateContent({
-    model: "gemini-1.5-flash",
+    model: "gemini-2.5-flash",
     contents: prompt,
     config: {
       systemInstruction: "Sen sözleşmeler hakkında soruları yanıtlayan yardımcı bir hukuki asistansın.",

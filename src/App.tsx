@@ -541,11 +541,9 @@ export default function App() {
                                 <p className="text-blue-600 font-medium text-sm mb-2">{date.date_or_timeframe}</p>
                                 <p className="text-sm text-neutral-600 mb-4">{date.description}</p>
                               </div>
-                              <Button variant="secondary" size="sm" className="w-full no-print" asChild>
-                                <a href={createCalendarLink(date.event_name, date.description)} target="_blank" rel="noreferrer">
-                                  Takvime Ekle
-                                </a>
-                              </Button>
+                              <a href={createCalendarLink(date.event_name, date.description)} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground hover:bg-secondary/80 h-9 px-3 w-full no-print">
+                                Takvime Ekle
+                              </a>
                             </div>
                           ))}
                         </div>
