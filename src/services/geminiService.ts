@@ -6,10 +6,11 @@ const getSystemInstruction = (language: string) => `Sen, hukuki terimleri teknik
 Tüm yanıtlarını ${language} dilinde vermelisin.
 
 # ANALİZ KURALLARI
-1. ASLA sadece genel geçer cümleler kurma. Sözleşmedeki spesifik maddelere atıfta bulun.
-2. "Lawyer Worry Score" belirlerken; belirsiz iade şartları, tek taraflı fesih hakları veya aşırı cezai şartlar varsa puanı yükselt (10 en riskli).
-3. Hukuki jargon kullandığında, hemen parantez içinde veya açıklama kısmında tanımını yap.
-4. JSON çıktısı dışında hiçbir açıklama metni ekleme.`;
+1. ÖNCE KONTROL ET: Verilen metin veya dosya içeriği gerçekten bir sözleşme, anlaşma, kullanım koşulu veya hukuki bir belge mi? Eğer rastgele kelimeler, şarkı sözleri, yemek tarifi, günlük konuşma veya alakasız bir metinse "is_valid_contract" değerini false yap ve "error_message" kısmına "Lütfen geçerli bir sözleşme veya hukuki metin giriniz." yaz. Diğer alanları boş bırakabilirsin.
+2. ASLA sadece genel geçer cümleler kurma. Sözleşmedeki spesifik maddelere atıfta bulun.
+3. "Lawyer Worry Score" belirlerken; belirsiz iade şartları, tek taraflı fesih hakları veya aşırı cezai şartlar varsa puanı yükselt (10 en riskli).
+4. Hukuki jargon kullandığında, hemen parantez içinde veya açıklama kısmında tanımını yap.
+5. JSON çıktısı dışında hiçbir açıklama metni ekleme.`;
 
 export interface RiskFlag {
   clause_text: string;
@@ -32,6 +33,8 @@ export interface ComplexTerm {
 }
 
 export interface ContractAnalysis {
+  is_valid_contract: boolean;
+  error_message: string;
   document_type: string;
   summary_bullets: string[];
   lawyer_worry_score: number;
@@ -44,6 +47,8 @@ export interface ContractAnalysis {
 }
 
 export interface ComparisonAnalysis {
+  is_valid_contract: boolean;
+  error_message: string;
   summary: string;
   changes: {
     type: "added" | "removed" | "modified";
@@ -96,6 +101,14 @@ export async function analyzeContract(input: string | File, language: string = "
       responseSchema: {
         type: Type.OBJECT,
         properties: {
+          is_valid_contract: {
+            type: Type.BOOLEAN,
+            description: "Verilen metin geçerli bir sözleşme veya hukuki belge mi?",
+          },
+          error_message: {
+            type: Type.STRING,
+            description: "Eğer is_valid_contract false ise gösterilecek hata mesajı.",
+          },
           document_type: {
             type: Type.STRING,
             description: "Tespit edilen belge türü (örn: Kira Sözleşmesi, İş Sözleşmesi)",
@@ -183,6 +196,8 @@ export async function analyzeContract(input: string | File, language: string = "
           },
         },
         required: [
+          "is_valid_contract",
+          "error_message",
           "document_type",
           "summary_bullets",
           "lawyer_worry_score",
@@ -208,6 +223,7 @@ export async function analyzeContract(input: string | File, language: string = "
 export async function compareContracts(oldContract: string, newContract: string, language: string = "Türkçe"): Promise<ComparisonAnalysis> {
   const prompt = `
     Aşağıdaki iki sözleşme versiyonunu karşılaştır.
+    ÖNCE KONTROL ET: Verilen metinler gerçekten sözleşme, anlaşma veya hukuki belge mi? Eğer alakasız metinlerse "is_valid_contract" değerini false yap ve "error_message" kısmına "Lütfen karşılaştırmak için geçerli sözleşme metinleri giriniz." yaz.
     YENİ versiyonda ESKİ versiyona göre nelerin eklendiğini, çıkarıldığını veya değiştirildiğini tespit et.
     Özellikle kullanıcı aleyhine olan değişikliklere (gizli maddeler, artan sorumluluklar, azalan haklar) dikkat et.
     Yanıtını ${language} dilinde ver.
@@ -230,6 +246,8 @@ export async function compareContracts(oldContract: string, newContract: string,
       responseSchema: {
         type: Type.OBJECT,
         properties: {
+          is_valid_contract: { type: Type.BOOLEAN },
+          error_message: { type: Type.STRING },
           summary: { type: Type.STRING },
           changes: {
             type: Type.ARRAY,
@@ -247,7 +265,7 @@ export async function compareContracts(oldContract: string, newContract: string,
           overall_risk_shift: { type: Type.STRING, description: "worse | better | neutral" },
           recommendation: { type: Type.STRING },
         },
-        required: ["summary", "changes", "overall_risk_shift", "recommendation"],
+        required: ["is_valid_contract", "error_message", "summary", "changes", "overall_risk_shift", "recommendation"],
       },
     },
   });

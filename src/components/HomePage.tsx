@@ -112,6 +112,12 @@ export default function HomePage() {
       }
       
       const result = await analyzeContract(input, language);
+      
+      if (result.is_valid_contract === false) {
+        setError(result.error_message || "Lütfen geçerli bir sözleşme veya hukuki metin giriniz.");
+        return;
+      }
+
       setAnalysis(result);
 
       if (user) {
@@ -156,6 +162,12 @@ export default function HomePage() {
       const oldText = anonymizeText(oldContractText);
       const newText = anonymizeText(newContractText);
       const result = await compareContracts(oldText, newText, language);
+      
+      if (result.is_valid_contract === false) {
+        setError(result.error_message || "Lütfen karşılaştırmak için geçerli sözleşme metinleri giriniz.");
+        return;
+      }
+
       setComparison(result);
 
       if (!user) {

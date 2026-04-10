@@ -62,23 +62,17 @@ export default function AccountPage() {
   return (
     <div className="min-h-screen bg-neutral-50 p-6">
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-neutral-900">Hesabım</h1>
-              <p className="text-neutral-500 text-sm">{user.email}</p>
-            </div>
-          </div>
-          <Button variant="outline" onClick={handleLogout} className="gap-2">
-            <LogOut className="w-4 h-4" />
-            Çıkış Yap
+        <div className="flex items-center gap-4 mb-8">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+            <ArrowLeft className="w-5 h-5" />
           </Button>
+          <div>
+            <h1 className="text-2xl font-bold text-neutral-900">Hesabım</h1>
+            <p className="text-neutral-500 text-sm">{user.email}</p>
+          </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-6 mb-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-4 sm:p-6 mb-8">
           <h2 className="text-lg font-semibold text-neutral-900 mb-6 flex items-center gap-2">
             <FileText className="w-5 h-5 text-blue-600" />
             Geçmiş Analizlerim
@@ -134,6 +128,13 @@ export default function AccountPage() {
               ))}
             </div>
           )}
+        </div>
+
+        <div className="flex justify-center sm:justify-end mb-8">
+          <Button variant="destructive" onClick={handleLogout} className="gap-2 w-full sm:w-auto">
+            <LogOut className="w-4 h-4" />
+            Çıkış Yap
+          </Button>
         </div>
       </div>
 
